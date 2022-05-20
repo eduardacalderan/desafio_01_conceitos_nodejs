@@ -16,7 +16,7 @@ function checksExistsUserAccount(request, response, next) {
   const user = users.find((user) => user.username === username);
 
   if (!user) {
-    return response.status(400).json({ error: "User doesn't exists" });
+    return response.status(404).json({ error: "User doesn't exists" });
   }
 
   request.user = user;
@@ -25,54 +25,52 @@ function checksExistsUserAccount(request, response, next) {
 }
 
 app.post("/users", (request, response) => {
-  const { name, username } = request.body;
+  const { username, name } = request.body;
 
-  const userAlreadyExists = users.some((user) => user.username === username);
+  const userAlreadyExists = users.find((user) => user.username === username);
 
   if (userAlreadyExists) {
     return response.status(400).json({ error: "User already exists" });
   }
 
-  users.push({
+  const user = {
+    id: uuidv4(),
     name,
     username,
-    id: uuidv4(),
     todos: [],
-  });
+  };
+  users.push(user);
 
-  const userProps = {};
-
-  return response.status(201).json(users);
+  return response.status(201).json(user);
 });
 
 app.get("/todos", checksExistsUserAccount, (request, response) => {
   const { user } = request;
 
-  const { todos } = user.todos.map((todo) => todo);
-
-  return response.status(201).json(todos);
+  return response.json(user.todos);
 });
 
 app.post("/todos", checksExistsUserAccount, (request, response) => {
+  const { user } = request;
   const { title, deadline } = request.body;
 
-  const { user } = request;
-
-  user.todos.push({
+  const todo = {
     id: uuidv4(),
     title,
     done: false,
     deadline: new Date(deadline),
     created_at: new Date(),
-  });
+  };
 
-  return response.status(201).json(user);
+  user.todos.push(todo);
+
+  return response.status(201).json(todo);
 });
 
 app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
+  const { user } = request;
   const { title, deadline } = request.body;
   const { id } = request.params;
-  const { user } = request;
 
   const todo = user.todos.find((todo) => todo.id === id);
 
@@ -82,29 +80,44 @@ app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
     });
   }
 
-  if (!todo.title) {
-    return response.status(404).json({
-      error: "the title is missing",
-    });
-  }
   todo.title = title;
-
-  if (!todo.deadline) {
-    return response.status(404).json({
-      error: "the deadline is missing",
-    });
-  }
   todo.deadline = new Date(deadline);
 
-  return response.status(200).json(todo);
+  return response.json(todo);
 });
 
 app.patch("/todos/:id/done", checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { user } = request;
+  const { id } = request.params;
+
+  const todo = user.todos.find((todo) => todo.id === id);
+
+  if (!todo) {
+    return response.status(404).json({
+      error: "Todo is missing",
+    });
+  }
+
+  todo.done = true;
+
+  return response.json(todo);
 });
 
 app.delete("/todos/:id", checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { user } = request;
+  const { id } = request.params;
+
+  const todo = user.todos.findIndex((todo) => todo.id === id);
+
+  if (todo === -1) {
+    return response.status(404).json({
+      error: "Todo not found",
+    });
+  }
+
+  user.todos.splice(todo, 1);
+
+  return response.status(204).json();
 });
 
 module.exports = app;

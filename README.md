@@ -3,5 +3,5 @@
 [X] Criar um novo _todo_; - post
 [X] Listar todos os _todos_; - get
 [X] Alterar o `title` e `deadline` de um _todo_ existente;
-[] Marcar um _todo_ como feito;
-[] Excluir um _todo_;
+[X] Marcar um _todo_ como feito;
+[X] Excluir um _todo_;
